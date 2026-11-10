@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FLUIR PARFUM — Perfumería contemporánea</title>
+  <meta name="description" content="FLUIR PARFUM: fragancias contemporáneas que fluyen con vos. Descubrí nuestras familias olfativas.">
+  <meta name="theme-color" content="#1E4A52">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..500,0..100;1,9..144,300..500,0..100&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ============ HEADER ============ -->
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <a href="#" class="logo" aria-label="Fluir Parfum, inicio">FLUIR <span>parfum</span></a>
+      <nav class="nav" id="nav" aria-label="Principal">
+        <a href="#coleccion">Colección</a>
+        <a href="#familias">Familias</a>
+        <a href="#manifiesto">Manifiesto</a>
+        <a href="#ritual">Ritual</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <div class="header__actions">
+        <button class="cart-btn" aria-label="Carrito">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+          <span class="cart-count" id="cartCount">0</span>
+        </button>
+        <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">
+          <span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="hero__blob hero__blob--1"></div>
+      <div class="hero__blob hero__blob--2"></div>
+      <div class="hero__blob hero__blob--3"></div>
+
+      <div class="container hero__grid">
+        <div class="hero__copy">
+          <span class="eyebrow reveal">Colección Marea · 2026</span>
+          <h1 class="display reveal" data-delay="1">Fragancias que <em>fluyen</em> con vos.</h1>
+          <p class="lead reveal" data-delay="2">Perfumería contemporánea pensada para la piel, la memoria y el movimiento. Notas profundas, estelas suaves y una identidad que se queda.</p>
+          <div class="hero__ctas reveal" data-delay="3">
+            <a href="#coleccion" class="btn">Descubrir colección <span class="arrow">→</span></a>
+            <a href="#familias" class="btn btn--ghost">Encontrá tu familia</a>
+          </div>
+          <div class="hero__meta reveal" data-delay="3">
+            <div><strong>24</strong><span>Fragancias</span></div>
+            <div><strong>6</strong><span>Familias olfativas</span></div>
+            <div><strong>12h</strong><span>Fijación media</span></div>
+          </div>
+        </div>
+
+        <div class="hero__visual reveal" data-delay="2">
+          <div class="hero__arch"></div>
+          <div class="bottle hero__bottle" style="--liquid:#A99CBC">
+            <div class="bottle__cap"></div><div class="bottle__neck"></div>
+            <div class="bottle__body"><div class="bottle__liquid"></div><div class="bottle__shine"></div></div>
+            <span class="bottle__label">FLUIR</span>
+          </div>
+          <div class="hero__tag"><b>Bruma Lavanda</b>Iris · Almizcle · Cedro</div>
+          <div class="hero__tag hero__tag--2"><i></i>Nuevo lanzamiento</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MARQUESINA ============ -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span>Fluir es dejarse llevar</span><span>Notas que cuentan historias</span><span>Hecho para tu piel</span><span>Perfumería contemporánea</span>
+        <span>Fluir es dejarse llevar</span><span>Notas que cuentan historias</span><span>Hecho para tu piel</span><span>Perfumería contemporánea</span>
+      </div>
+    </div>
+
+    <!-- ============ COLECCIÓN ============ -->
+    <section class="section" id="coleccion">
+      <div class="container">
+        <div class="section__head">
+          <div>
+            <span class="eyebrow reveal">La colección</span>
+            <h2 class="h2 reveal" data-delay="1">Cada aroma, un <em>paisaje</em> propio.</h2>
+          </div>
+          <div class="filters reveal" data-delay="2" role="tablist" aria-label="Filtrar por familia">
+            <button class="chip is-active" data-filter="all">Todas</button>
+            <button class="chip" data-filter="acuatico">Acuáticas</button>
+            <button class="chip" data-filter="amaderado">Amaderadas</button>
+            <button class="chip" data-filter="oriental">Orientales</button>
+            <button class="chip" data-filter="floral">Florales</button>
+            <button class="chip" data-filter="verde">Verdes</button>
+          </div>
+        </div>
+        <div class="products" id="products"><!-- render JS --></div>
+      </div>
+    </section>
+
+    <!-- ============ FAMILIAS ============ -->
+    <section class="section families" id="familias">
+      <div class="container" style="position:relative">
+        <div class="section__head">
+          <div>
+            <span class="eyebrow reveal">Familias olfativas</span>
+            <h2 class="h2 reveal" data-delay="1">Encontrá el aroma que te <em>nombra</em>.</h2>
+          </div>
+          <p class="lead reveal" data-delay="2">Cada familia tiene su propio color. Así reconocés nuestras fragancias de un vistazo.</p>
+        </div>
+        <div class="family-grid">
+          <article class="family reveal" style="--tone:#3F7E89"><span class="family__num">01</span><div><h3>Acuáticas</h3><p>Brisa salina, algas y cítricos fríos. Frescura que respira.</p></div></article>
+          <article class="family reveal" data-delay="1" style="--tone:#A99CBC"><span class="family__num">02</span><div><h3>Amaderadas</h3><p>Cedro, vetiver y sándalo. Calma con carácter.</p></div></article>
+          <article class="family reveal" data-delay="2" style="--tone:#8A3446"><span class="family__num">03</span><div><h3>Orientales</h3><p>Especias, resinas y frutos oscuros. Intensidad que envuelve.</p></div></article>
+          <article class="family reveal" style="--tone:#D6CEE0"><span class="family__num">04</span><div><h3>Florales</h3><p>Iris, peonía y jazmín. Delicadeza con presencia.</p></div></article>
+          <article class="family reveal" data-delay="1" style="--tone:#6B7350"><span class="family__num">05</span><div><h3>Verdes</h3><p>Hoja de higuera, té y hierbas. Naturaleza recién cortada.</p></div></article>
+          <article class="family reveal" data-delay="2" style="--tone:#4A5C86"><span class="family__num">06</span><div><h3>Nocturnas</h3><p>Almizcle, ámbar gris y cuero suave. Para cuando cae el sol.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MANIFIESTO ============ -->
+    <section class="section" id="manifiesto">
+      <div class="container editorial__grid">
+        <div class="editorial__visual reveal">
+          <div class="editorial__panel editorial__panel--a"></div>
+          <p class="editorial__quote">El perfume es memoria en movimiento.</p>
+          <div class="editorial__panel editorial__panel--b">
+            <div class="bottle">
+              <div class="bottle__cap"></div><div class="bottle__neck"></div>
+              <div class="bottle__body"><div class="bottle__liquid"></div><div class="bottle__shine"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="editorial__copy">
+          <span class="eyebrow reveal">Manifiesto</span>
+          <h2 class="h2 reveal" data-delay="1">No seguimos tendencias. <em>Fluimos.</em></h2>
+          <p class="lead reveal" data-delay="2">FLUIR PARFUM nace de una idea simple: un perfume tiene que acompañar tu ritmo, no imponerlo.</p>
+          <p class="reveal" data-delay="2" style="color:var(--ink-soft)">Creamos fragancias de autor con materias primas seleccionadas, concentraciones altas y una estética que se aleja de lo previsible. Sin excesos, sin artificios: solo aromas que se sienten propios.</p>
+          <div class="pillars reveal" data-delay="3">
+            <div class="pillar"><strong>Extrait</strong><span>Concentración 20–25%</span></div>
+            <div class="pillar"><strong>Cruelty free</strong><span>Sin testeo animal</span></div>
+            <div class="pillar"><strong>Recargable</strong><span>Frascos reutilizables</span></div>
+          </div>
+          <a href="#coleccion" class="btn btn--ghost reveal" data-delay="3">Conocer más <span class="arrow">→</span></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RITUAL ============ -->
+    <section class="section ritual" id="ritual">
+      <div class="container">
+        <div class="ritual__box">
+          <div style="position:relative;z-index:1">
+            <span class="eyebrow reveal">El ritual Fluir</span>
+            <h2 class="h2 reveal" data-delay="1">Tu fragancia, en <em>tres</em> gestos.</h2>
+            <p class="lead reveal" data-delay="2">Así se descubre un perfume: sin apuro, sobre la piel, dejando que cada nota aparezca a su tiempo.</p>
+            <a href="#contacto" class="btn btn--light reveal" data-delay="3">Pedí tus muestras <span class="arrow">→</span></a>
+          </div>
+          <ol class="steps">
+            <li class="reveal"><div><b>Explorá</b><span>Elegí tres fragancias de distintas familias en formato muestra.</span></div></li>
+            <li class="reveal" data-delay="1"><div><b>Viví</b><span>Usalas durante una semana. Dejá que tu piel decida.</span></div></li>
+            <li class="reveal" data-delay="2"><div><b>Elegí</b><span>El valor de las muestras se descuenta de tu frasco completo.</span></div></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TESTIMONIOS ============ -->
+    <section class="section">
+      <div class="container">
+        <div class="section__head">
+          <div>
+            <span class="eyebrow reveal">Comunidad</span>
+            <h2 class="h2 reveal" data-delay="1">Lo que deja <em>huella</em>.</h2>
+          </div>
+        </div>
+        <div class="testimonials">
+          <article class="testimonial reveal"><span class="stars">★★★★★</span><blockquote>“Marea Petróleo es lo primero que me preguntan cuando entro a un lugar. Dura todo el día.”</blockquote><footer><span class="avatar">L</span><div><b>Lucía M.</b><br>Buenos Aires</div></footer></article>
+          <article class="testimonial reveal" data-delay="1"><span class="stars">★★★★★</span><blockquote>“Por fin una marca que no huele a todas las demás. Bruma Lavanda es otra cosa.”</blockquote><footer><span class="avatar">T</span><div><b>Tomás R.</b><br>Córdoba</div></footer></article>
+          <article class="testimonial reveal" data-delay="2"><span class="stars">★★★★★</span><blockquote>“El ritual de muestras me ayudó a encontrar mi perfume sin adivinar. Experiencia impecable.”</blockquote><footer><span class="avatar">C</span><div><b>Camila S.</b><br>Rosario</div></footer></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ NEWSLETTER ============ -->
+    <section class="section newsletter" id="contacto">
+      <div class="hero__blob hero__blob--1" style="top:auto;bottom:-260px;right:auto;left:-120px"></div>
+      <div class="container" style="position:relative">
+        <span class="eyebrow reveal">Club Fluir</span>
+        <h2 class="h2 reveal" data-delay="1">Lanzamientos, muestras y <em>notas</em> exclusivas.</h2>
+        <p class="lead reveal" data-delay="2">Sumate y recibí un 10% en tu primera compra.</p>
+        <form class="news-form reveal" data-delay="3" id="newsForm" novalidate>
+          <label for="email" class="sr-only" style="position:absolute;left:-9999px">Email</label>
+          <input id="email" type="email" placeholder="Tu email" required>
+          <button class="btn" type="submit">Suscribirme <span class="arrow">→</span></button>
+        </form>
+        <p class="news-msg" id="newsMsg" role="status"></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__big" aria-hidden="true">Fluir Parfum</div>
+      <div class="footer__grid">
+        <div>
+          <a href="#" class="logo">FLUIR <span>parfum</span></a>
+          <p style="max-width:34ch;font-size:.9rem">Perfumería contemporánea. Fragancias de autor que fluyen con tu ritmo.</p>
+        </div>
+        <div><h4>Tienda</h4><ul><li><a href="#coleccion">Colección</a></li><li><a href="#familias">Familias</a></li><li><a href="#ritual">Muestras</a></li></ul></div>
+        <div><h4>Marca</h4><ul><li><a href="#manifiesto">Manifiesto</a></li><li><a href="#">Puntos de venta</a></li><li><a href="#">Preguntas frecuentes</a></li></ul></div>
+        <div><h4>Seguinos</h4><ul><li><a href="#">Instagram</a></li><li><a href="#">TikTok</a></li><li><a href="#">WhatsApp</a></li></ul></div>
+      </div>
+      <div class="footer__bottom"><span>© 2026 FLUIR PARFUM. Todos los derechos reservados.</span><span>Diseñado con intención.</span></div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
