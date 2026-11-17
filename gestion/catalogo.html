@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Catálogo de fragancias</title>
+  <meta name="description" content="Catálogo de fragancias. Elegí tus perfumes y hacé tu pedido por WhatsApp.">
+  <meta name="theme-color" content="#1E4A52">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..500;1,9..144,300..500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/catalogo.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a href="#" class="logo" id="logo">Catálogo</a>
+      <button class="cart-btn" id="cartBtn" aria-label="Ver pedido">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="blob blob--1"></div><div class="blob blob--2"></div>
+      <div class="container hero__inner">
+        <span class="eyebrow">Catálogo · <span id="year"></span></span>
+        <h1 class="display" id="tagline">Fragancias que <em>fluyen</em> con vos.</h1>
+        <p class="lead">Elegí tus favoritos, armá tu pedido y envialo por WhatsApp. Te respondemos para coordinar pago y entrega.</p>
+        <div class="hero__meta"><div><strong id="nProd">0</strong><span>Productos</span></div><div><strong id="nCat">0</strong><span>Categorías</span></div></div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="toolbar">
+        <div class="filters" id="filters" aria-label="Filtrar por categoría"></div>
+        <label class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="Buscar fragancia" aria-label="Buscar fragancia">
+        </label>
+      </div>
+      <div class="products" id="products"></div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__big" id="footBig" aria-hidden="true"></div>
+      <div class="footer__row"><span id="foot"></span><a id="footWa" href="#" target="_blank" rel="noopener">Escribinos por WhatsApp</a></div>
+    </div>
+  </footer>
+
+  <button class="btn float-cart" id="floatCart">Ver pedido · <span id="floatTotal"></span></button>
+
+  <div class="backdrop" id="backdrop" hidden></div>
+  <aside class="drawer" id="drawer" aria-label="Tu pedido" hidden>
+    <div class="drawer__head"><h2>Tu <em>pedido</em></h2><button class="close" id="close" aria-label="Cerrar">×</button></div>
+    <div class="drawer__body" id="lines"></div>
+    <form class="drawer__foot" id="orderForm">
+      <div class="total"><span>Total</span><b id="total"></b></div>
+      <input id="cName" placeholder="Tu nombre" required autocomplete="name">
+      <textarea id="cNote" placeholder="Dirección, forma de pago o comentarios (opcional)"></textarea>
+      <button class="btn" type="submit">Enviar pedido por WhatsApp</button>
+    </form>
+  </aside>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/catalogo.js"></script>
+</body>
+</html>
