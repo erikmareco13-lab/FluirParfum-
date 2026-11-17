@@ -16,6 +16,7 @@ const Store = (() => {
       locale: 'es-AR',
       receiptNote: '¡Gracias por tu compra!',
       pin: '',
+      theme: 'auto',
       nextReceipt: 1,
     },
     products: [],

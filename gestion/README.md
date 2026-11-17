@@ -1,6 +1,8 @@
 # Panel de gestión + catálogo para perfumería
 
-App web instalable en el celular (PWA). No necesita servidor ni base de datos para funcionar. Usa la identidad visual "Marea Nocturna" de Fluir Parfum.
+App web instalable en el celular (PWA). No necesita servidor ni base de datos para funcionar.
+
+**Diseño:** el panel usa el tema "Índigo", con tipografía Plus Jakarta Sans, violeta índigo como color principal y superficies limpias. Tiene modo claro, oscuro o automático (Ajustes → Apariencia). El catálogo público (`catalogo.html`) tiene su propia estética, inspirada en la web de Fluir Parfum.
 
 ## Qué incluye
 

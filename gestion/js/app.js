@@ -191,7 +191,7 @@
     const every = bs.length > 16 ? Math.ceil(bs.length / 8) : 1;
     el.innerHTML = `
       <svg class="chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Ventas y gastos por periodo">
-        <defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="#A8475A" opacity=".55"/><rect width="2.5" height="5" fill="#A8475A"/></pattern></defs>
+        <defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="hatch-b" width="5" height="5"/><rect class="hatch-a" width="2.5" height="5"/></pattern></defs>
         <g class="grid">${ticks.map(v => `<line x1="${padL}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/>`).join('')}</g>
         <g class="axis">${ticks.map(v => `<text x="${padL - 8}" y="${y(v) + 3}" text-anchor="end">${compact(v)}</text>`).join('')}
           ${bs.map((b, i) => i % every === 0 ? `<text x="${padL + colW * i + colW / 2}" y="${H - 6}" text-anchor="middle">${esc(b.label)}</text>` : '').join('')}</g>
@@ -336,7 +336,7 @@
         ${m.discount ? `<div class="receipt__row"><span>Descuento</span><span>−${money(m.discount)}</span></div>` : ''}
         <div class="receipt__row total"><span>Total</span><span>${money(m.total)}</span></div>
         <div class="receipt__row"><span>Pagado</span><span>${money(S.paidOf(m))}</span></div>
-        ${due > 0 ? `<div class="receipt__row" style="color:var(--borgona);font-weight:700"><span>Saldo pendiente</span><span>${money(due)}</span></div>` : ''}
+        ${due > 0 ? `<div class="receipt__row due"><span>Saldo pendiente</span><span>${money(due)}</span></div>` : ''}
         ${m.note ? `<hr><div class="receipt__row"><span class="muted">${esc(m.note)}</span></div>` : ''}
         ${isV ? `<div class="receipt__note">${esc(st.receiptNote)}</div>` : ''}
       </div>
@@ -416,7 +416,7 @@
           <div class="row-between"><span class="pick__price">${money(p.price)}</span><span class="pick__stock">${p.stock <= 0 ? '<span class="tag tag--debt">Agotado</span>' : `Stock ${p.stock}`}</span></div>
         </button>`;
       }).join('')}</div>` : `<div class="list"><div class="empty"><b>No hay productos</b>Cargalos en Inventario o usá “Venta libre”.</div></div>`}
-      ${units ? `<div class="cartbar"><div><small>${units} ${units === 1 ? 'producto' : 'productos'}</small><b>${money(total)}</b></div><div class="btn-row"><button class="btn btn--sm" style="background:transparent;color:var(--lavanda-2)" id="clear">Vaciar</button><button class="btn" id="next">Continuar</button></div></div><div style="height:90px"></div>` : ''}`;
+      ${units ? `<div class="cartbar"><div><small>${units} ${units === 1 ? 'producto' : 'productos'}</small><b>${money(total)}</b></div><div class="btn-row"><button class="btn btn--sm btn--clear" id="clear">Vaciar</button><button class="btn" id="next">Continuar</button></div></div><div style="height:90px"></div>` : ''}`;
     const qi = $('#q');
     qi.addEventListener('input', debounce(() => { state.saleSearch = qi.value; views.venta(); const n = $('#q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 200));
     $('#cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { state.saleCat = b.dataset.c; views.venta(); } };
@@ -451,7 +451,7 @@
           <div class="field"><label for="dt">Fecha</label><input class="input" id="dt" type="date" value="${S.today()}"></div>
           <div class="field"><label for="nt">Nota</label><input class="input" id="nt" placeholder="Opcional"></div>
         </div>
-        <div class="row-between" style="margin:4px 0 14px"><span class="label-sm">Total</span><b id="tot" style="font-size:1.5rem;font-family:var(--f-display);font-weight:400"></b></div>
+        <div class="row-between" style="margin:4px 0 14px"><span class="label-sm">Total</span><b id="tot" class="total-big"></b></div>
         <button class="btn btn--block" type="submit">Registrar venta</button>
       </form>`, root => {
       const calc = () => {
@@ -599,11 +599,11 @@
       <form class="card" id="pf">
         <div class="field" style="justify-items:center">
           <label for="img" style="cursor:pointer;display:grid;justify-items:center;gap:8px;text-transform:none;letter-spacing:0">
-            <div id="imgPrev" style="width:140px;height:140px;border-radius:18px;background:var(--hueso-2);display:grid;place-items:center;overflow:hidden">${p.image ? `<img src="${p.image}" alt="" style="width:100%;height:100%;object-fit:cover">` : bottle(p.family, 96)}</div>
+            <div id="imgPrev" class="photo-prev">${p.image ? `<img src="${p.image}" alt="">` : bottle(p.family, 96)}</div>
             <span class="link">${icon('camera', 16)} ${p.image ? 'Cambiar foto' : 'Agregar foto'}</span>
           </label>
           <input id="img" type="file" accept="image/*" hidden>
-          ${p.image ? '<button type="button" class="link" id="rmImg" style="color:var(--borgona)">Quitar foto</button>' : ''}
+          ${p.image ? '<button type="button" class="link amount-out" id="rmImg">Quitar foto</button>' : ''}
         </div>
         <div class="field"><label for="pn">Nombre</label><input class="input" id="pn" value="${esc(p.name)}" required placeholder="Ej.: Extracto tipo Sauvage 30 ml"></div>
         <div class="grid-2">
@@ -632,7 +632,7 @@
     $('#img').onchange = async e => {
       const f = e.target.files[0]; if (!f) return;
       image = await resizeImage(f, 640, .78);
-      $('#imgPrev').innerHTML = `<img src="${image}" alt="" style="width:100%;height:100%;object-fit:cover">`;
+      $('#imgPrev').innerHTML = `<img src="${image}" alt="">`;
     };
     $('#rmImg')?.addEventListener('click', () => { image = ''; $('#imgPrev').innerHTML = bottle($('#pfa').value, 96); });
     $('#pf').onsubmit = e => {
@@ -676,7 +676,7 @@
     view.innerHTML = `
       ${topbar('Deudas', 'Fiados y cuentas pendientes')}
       <div class="segmented" data-seg="debtTab"><button data-v="cobrar" class="${tab === 'cobrar' ? 'is-active' : ''}">Me deben</button><button data-v="pagar" class="${tab === 'pagar' ? 'is-active' : ''}">Debo</button></div>
-      <section class="hero-balance" style="${tab === 'pagar' ? 'background:linear-gradient(135deg,#141B2B,#4A1E33 60%,#6B2333 120%)' : ''}">
+      <section class="hero-balance ${tab === 'pagar' ? 'hero-balance--debt' : ''}">
         <div class="label">${tab === 'cobrar' ? 'Total por cobrar' : 'Total por pagar'}</div>
         <div class="big">${money(total)}</div>
         <div class="row"><div class="pill"><span>${tab === 'cobrar' ? 'Clientes' : 'Proveedores'}</span><b>${Object.keys(groups).length}</b></div><div class="pill"><span>${tab === 'cobrar' ? 'Vos debés' : 'Te deben'}</span><b>${money(other)}</b></div></div>
@@ -822,6 +822,7 @@
         <div class="field"><label for="bt">Frase del catálogo</label><input class="input" id="bt" value="${esc(st.tagline)}"></div>
         <div class="field"><label for="bw">WhatsApp para pedidos</label><input class="input" id="bw" inputmode="tel" value="${esc(st.whatsapp)}" placeholder="Con código de país, ej.: 5491155551111"></div>
         <div class="field"><label for="bc">Moneda</label><select class="input" id="bc">${Object.entries(CURRENCIES).map(([k, v]) => `<option value="${k}" ${st.currency === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+        <div class="field"><span class="label-sm">Apariencia</span><div class="choice">${[['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Oscuro']].map(([k, l]) => `<input type="radio" name="th" id="th-${k}" value="${k}" ${(st.theme || 'auto') === k ? 'checked' : ''}><label for="th-${k}">${l}</label>`).join('')}</div></div>
         <div class="field"><label for="br">Mensaje en recibos</label><input class="input" id="br" value="${esc(st.receiptNote)}"></div>
         <div class="field"><label for="bp">PIN de acceso (opcional)</label><input class="input" id="bp" inputmode="numeric" maxlength="6" value="${esc(st.pin)}" placeholder="4 a 6 números"><small class="muted">Pide el PIN al abrir el panel en este dispositivo.</small></div>
         <button class="btn btn--block" type="submit">Guardar</button>
@@ -847,9 +848,9 @@
       e.preventDefault();
       const pin = $('#bp').value.trim();
       if (pin && !/^\d{4,6}$/.test(pin)) return toast('El PIN debe tener de 4 a 6 números');
-      Object.assign(st, { businessName: $('#bn').value.trim() || st.businessName, tagline: $('#bt').value.trim(), whatsapp: $('#bw').value.replace(/\D/g, ''), currency: $('#bc').value, receiptNote: $('#br').value.trim(), pin });
+      Object.assign(st, { businessName: $('#bn').value.trim() || st.businessName, tagline: $('#bt').value.trim(), whatsapp: $('#bw').value.replace(/\D/g, ''), currency: $('#bc').value, receiptNote: $('#br').value.trim(), pin, theme: $('input[name=th]:checked').value });
       S.save(); if (pin) sessionStorage.setItem('unlocked', '1');
-      toast('Ajustes guardados'); render();
+      toast('Ajustes guardados'); applyTheme(); render();
     };
     $('#cpy').onclick = () => navigator.clipboard?.writeText(catalogURL).then(() => toast('Enlace copiado'), () => prompt('Copiá el enlace:', catalogURL));
     $('#pub').onclick = () => {
@@ -884,7 +885,7 @@
   function lockScreen() {
     const el = document.createElement('div');
     el.className = 'lock';
-    el.innerHTML = `<form>${icon('lock', 34, 1.4)}<h2>${esc(S.settings.businessName)}</h2><p style="opacity:.75">Ingresá tu PIN</p><input class="input" type="password" inputmode="numeric" maxlength="6" autocomplete="off" aria-label="PIN" autofocus><p id="lm" style="min-height:1.4em;color:var(--lavanda-2)"></p><button class="btn" style="background:var(--hueso);color:var(--noche)">Entrar</button></form>`;
+    el.innerHTML = `<form>${icon('lock', 34, 1.4)}<h2>${esc(S.settings.businessName)}</h2><p style="opacity:.75">Ingresá tu PIN</p><input class="input" type="password" inputmode="numeric" maxlength="6" autocomplete="off" aria-label="PIN" autofocus><p id="lm" style="min-height:1.4em"></p><button class="btn">Entrar</button></form>`;
     document.body.appendChild(el);
     $('form', el).onsubmit = e => {
       e.preventDefault();
@@ -893,6 +894,15 @@
     };
   }
 
+  function applyTheme() {
+    const t = S.settings.theme || 'auto';
+    if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+    const dark = t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.querySelector('meta[name=theme-color]').content = dark ? '#0B0D17' : '#F3F4F9';
+  }
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
+
+  applyTheme();
   render();
   if (S.settings.pin && !sessionStorage.getItem('unlocked')) lockScreen();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
