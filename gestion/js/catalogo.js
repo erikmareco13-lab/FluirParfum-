@@ -11,7 +11,7 @@
 
   async function loadData() {
     try {
-      const raw = localStorage.getItem('gestion-perfumes-v1');
+      const raw = localStorage.getItem('gestion-perfumes-v2');
       if (raw) {
         const db = JSON.parse(raw);
         return {
@@ -24,6 +24,7 @@
       const r = await fetch('catalogo.json', { cache: 'no-cache' });
       if (r.ok) return await r.json();
     } catch { /* sin archivo publicado */ }
+    if (typeof TIENDA !== 'undefined') return { settings: TIENDA.settings, products: TIENDA.products() };
     return { settings: { businessName: 'Catálogo', tagline: '', whatsapp: '', currency: 'USD', locale: 'es-AR' }, products: [] };
   }
 
@@ -76,7 +77,7 @@
           <span class="card__family">${esc(p.category || FAM[p.family] || '')}</span>
           <h3 class="card__name">${esc(p.name)}</h3>
           ${p.notes ? `<p class="card__notes">${esc(p.notes)}</p>` : ''}
-          <div class="card__foot"><span class="card__price">${money(p.price)}</span>
+          <div class="card__foot">${p.inStock ? `<span class="card__price">${p.price ? money(p.price) : 'Consultar'}</span>` : '<span class="card__out">Agotado</span>'}
             <button class="add" data-id="${esc(p.id)}" ${p.inStock ? '' : 'disabled'} aria-label="Agregar ${esc(p.name)} al pedido">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
             </button></div>

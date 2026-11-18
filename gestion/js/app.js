@@ -262,6 +262,7 @@
     const recent = [...S.data.movements].sort(sortDesc).slice(0, 6);
     view.innerHTML = `
       ${topbar(`Hola, <em>${esc(S.settings.businessName)}</em>`, new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }), { action: `<a class="icon-btn hide-desk" href="#ajustes" aria-label="Ajustes">${icon('gear')}</a>` })}
+      ${S.settings.demo ? `<div class="demo-note"><div><b>Ventas y gastos de ejemplo</b><span>Los productos son los de tu catálogo. Borrá los ejemplos cuando empieces a cargar tus ventas.</span></div><button class="btn btn--sm" id="clearDemo">Borrar ejemplos</button></div>` : ''}
       ${periodBar(state.period)}
       <section class="hero-balance">
         <div class="label">Balance · ${PERIODS[state.period]}</div>
@@ -296,6 +297,10 @@
       <div class="list">${recent.length ? recent.map(movRow).join('') : `<div class="empty"><b>Todavía no hay movimientos</b>Registrá tu primera venta con el botón +</div>`}</div>`;
     bindSeg(view, () => views.inicio());
     drawChart($('#chart'), state.period);
+    $('#clearDemo')?.addEventListener('click', async () => {
+      if (!(await confirmAsk('Se borran las ventas, gastos y contactos de ejemplo. Tus productos quedan como están.', 'Borrar ejemplos'))) return;
+      S.clearDemo(); toast('Ejemplos borrados'); views.inicio();
+    });
     $('[data-low]', view)?.addEventListener('click', () => { state.invFilter = 'bajo'; });
   };
 
@@ -435,7 +440,7 @@
           ${n ? `<span class="pick__qty">${n}</span>` : ''}
           <div class="pick__media">${productThumb(p, 76)}</div>
           <div class="pick__name">${esc(p.name)}</div>
-          <div class="row-between"><span class="pick__price">${money(p.price)}</span><span class="pick__stock">${p.stock <= 0 ? '<span class="tag tag--debt">Agotado</span>' : `Stock ${p.stock}`}</span></div>
+          <div class="row-between"><span class="pick__price">${p.price ? money(p.price) : 'Sin precio'}</span><span class="pick__stock">${p.stock <= 0 ? '<span class="tag tag--debt">Agotado</span>' : `Stock ${p.stock}`}</span></div>
         </button>`;
       }).join('')}</div>` : `<div class="list"><div class="empty"><b>No hay productos</b>Cargalos en Inventario o usá “Venta libre”.</div></div>`}
       ${units ? `<div class="cartbar"><div><small>${units} ${units === 1 ? 'producto' : 'productos'}</small><b>${money(total)}</b></div><div class="btn-row"><button class="btn btn--sm btn--clear" id="clear">Vaciar</button><button class="btn" id="next">Continuar</button></div></div><div style="height:90px"></div>` : ''}`;
@@ -597,11 +602,11 @@
       <div class="search mt">${icon('search', 18)}<input class="input" id="q" type="search" placeholder="Buscar producto" value="${esc(state.invSearch)}"></div>
       <div class="segmented" id="ifl">${[['todos', 'Todos'], ['bajo', 'Stock bajo'], ...cats.map(c => [c, c])].map(([v, l]) => `<button data-v="${esc(v)}" class="${state.invFilter === v ? 'is-active' : ''}">${esc(l)}</button>`).join('')}</div>
       <div class="list">${list.length ? list.map(p => {
-        const margin = p.price ? Math.round((1 - (p.cost || 0) / p.price) * 100) : 0;
+        const margin = p.price && p.cost ? `Margen ${Math.round((1 - p.cost / p.price) * 100)}%` : 'Sin costo cargado';
         const tag = p.stock <= 0 ? '<span class="tag tag--debt">Agotado</span>' : p.stock <= (p.minStock || 0) ? `<span class="tag tag--warn">Bajo · ${p.stock}</span>` : `<span class="tag tag--ok">${p.stock} u.</span>`;
         return `<a class="item" href="#producto-${p.id}"><div class="item__icon">${productThumb(p)}</div>
-          <div class="item__body"><div class="item__title">${esc(p.name)}</div><div class="item__meta">${esc(p.category || 'Sin categoría')} · Margen ${margin}%${p.inCatalog ? '' : ' · Oculto en catálogo'}</div></div>
-          <div class="item__end"><b>${money(p.price)}</b>${tag}</div></a>`;
+          <div class="item__body"><div class="item__title">${esc(p.name)}</div><div class="item__meta">${esc(p.category || 'Sin categoría')} · ${margin}${p.inCatalog ? '' : ' · Oculto en catálogo'}</div></div>
+          <div class="item__end"><b>${p.price ? money(p.price) : 'Sin precio'}</b>${tag}</div></a>`;
       }).join('') : `<div class="empty"><b>Sin productos</b>${ps.length ? 'Probá con otra búsqueda.' : 'Agregá tu primer producto.'}</div>`}</div>
       <div class="btn-row mt"><button class="btn btn--soft btn--sm" id="csv">Exportar inventario (CSV)</button></div>`;
     const qi = $('#q'); qi.addEventListener('input', debounce(() => { state.invSearch = qi.value; views.inventario(); const n = $('#q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250));

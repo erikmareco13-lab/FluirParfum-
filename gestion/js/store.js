@@ -5,7 +5,7 @@
 // reemplazar load()/save() sin tocar las pantallas.
 // =========================================================
 const Store = (() => {
-  const KEY = 'gestion-perfumes-v1';
+  const KEY = 'gestion-perfumes-v2';
 
   const empty = () => ({
     settings: {
@@ -50,54 +50,47 @@ const Store = (() => {
   const localISO = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const today = () => localISO(new Date());
 
-  // ---------- Datos de ejemplo ----------
+  // ---------- Datos iniciales: catálogo de Todooriginalshop ----------
+  // Productos tomados del catálogo actual del negocio. Las ventas, gastos y
+  // contactos son de ejemplo (settings.demo) y se borran desde el panel.
+
   function seed() {
     db = empty();
-    db.settings.businessName = 'Esencia Proveedor';
-    const P = (name, category, family, notes, price, cost, stock, min = 3, badge = '') =>
-      ({ id: uid(), name, category, family, notes, price, cost, stock, minStock: min, badge, image: '', inCatalog: true, createdAt: today() });
-    db.products = [
-      P('Extracto tipo Sauvage 30 ml', 'Extractos', 'acuatico', 'Bergamota · Pimienta · Ambroxan', 12, 5, 24, 5, 'Más vendido'),
-      P('Extracto tipo Good Girl 30 ml', 'Extractos', 'oriental', 'Almendra · Tuberosa · Cacao', 12, 5, 18, 5),
-      P('Extracto tipo Light Blue 30 ml', 'Extractos', 'acuatico', 'Limón · Manzana · Cedro', 12, 5, 2, 5),
-      P('Extracto tipo La Vie Est Belle', 'Extractos', 'floral', 'Iris · Praliné · Pachulí', 12, 5, 15, 5, 'Nuevo'),
-      P('Original árabe Lattafa 100 ml', 'Originales', 'oriental', 'Oud · Vainilla · Ámbar', 35, 22, 6, 2),
-      P('Original árabe Afnan 9pm', 'Originales', 'nocturno', 'Manzana · Canela · Lavanda', 38, 24, 4, 2),
-      P('Body splash Vainilla 250 ml', 'Body splash', 'floral', 'Vainilla · Coco · Almizcle', 8, 3, 30, 6),
-      P('Body splash Té verde', 'Body splash', 'verde', 'Té verde · Menta · Limón', 8, 3, 1, 6),
-      P('Frasco atomizador 10 ml', 'Insumos', 'amaderado', 'Vidrio · Recargable', 2, 0.6, 120, 20),
-    ];
+    Object.assign(db.settings, TIENDA.settings, { demo: true });
+    db.products = TIENDA.products().map(p => ({
+      ...p, family: 'oriental', cost: 0, stock: p.inStock ? 4 : 0, minStock: 1,
+      badge: '', inCatalog: true, createdAt: today(),
+    }));
     const C = (name, phone, type = 'cliente') => ({ id: uid(), name, phone, type, notes: '', createdAt: today() });
-    db.contacts = [
-      C('Lucía Méndez', '5491155551111'), C('Tomás Ríos', '5491155552222'), C('Camila Sosa', '5491155553333'),
-      C('Distribuidora Aromas', '5491155554444', 'proveedor'), C('Envases del Sur', '5491155555555', 'proveedor'),
-    ];
-    const [lu, to, ca, dist, env] = db.contacts;
+    db.contacts = [C('Cliente de ejemplo 1', ''), C('Cliente de ejemplo 2', ''), C('Proveedor de ejemplo', '', 'proveedor')];
+    const [c1, c2, prov] = db.contacts;
     const d = n => { const x = new Date(); x.setDate(x.getDate() - n); return localISO(x); };
-    const pr = db.products;
+    const P = id => db.products.find(p => p.id === id);
     const sale = (days, lines, method, contact, paid = true, abonos = []) => {
-      const items = lines.map(([p, q]) => ({ productId: p.id, name: p.name, qty: q, price: p.price, cost: p.cost }));
+      const items = lines.map(([id, q]) => { const p = P(id); return { productId: p.id, name: p.name, qty: q, price: p.price, cost: p.cost }; });
       const total = items.reduce((s, i) => s + i.qty * i.price, 0);
-      db.movements.push({ id: uid(), type: 'venta', date: d(days), items, total, method, contactId: contact?.id || '', concept: '', category: 'Ventas', paid: paid ? total : abonos.reduce((s, a) => s + a.amount, 0), payments: paid ? [{ date: d(days), amount: total, method }] : abonos, number: db.settings.nextReceipt++, createdAt: d(days) });
+      db.movements.push({ id: uid(), type: 'venta', date: d(days), items, total, method, contactId: contact?.id || '', concept: '', category: 'Ventas', payments: paid ? [{ date: d(days), amount: total, method }] : abonos, number: db.settings.nextReceipt++, createdAt: d(days), demo: true });
     };
     const exp = (days, amount, category, concept, contact, paid = true) =>
-      db.movements.push({ id: uid(), type: 'gasto', date: d(days), items: [], total: amount, method: 'transferencia', contactId: contact?.id || '', concept, category, paid: paid ? amount : 0, payments: paid ? [{ date: d(days), amount, method: 'transferencia' }] : [], number: 0, createdAt: d(days) });
+      db.movements.push({ id: uid(), type: 'gasto', date: d(days), items: [], total: amount, method: 'transferencia', contactId: contact?.id || '', concept, category, payments: paid ? [{ date: d(days), amount, method: 'transferencia' }] : [], number: 0, createdAt: d(days), demo: true });
+    sale(0, [['p01', 1]], 'transferencia', c1);
+    sale(1, [['p20', 1]], 'efectivo', null);
+    sale(2, [['p26', 2]], 'transferencia', c2, false, [{ date: d(2), amount: 20, method: 'efectivo' }]);
+    sale(3, [['p05', 1], ['p04', 1]], 'transferencia', c1);
+    sale(5, [['p31', 1]], 'qr', null);
+    sale(6, [['p15', 1]], 'efectivo', c2);
+    exp(2, 150, 'Mercadería', 'Compra de perfumes', prov, false);
+    exp(4, 12, 'Envíos', 'Envíos de la semana', null);
+    db.movements.forEach(m => { m.paid = m.payments.reduce((s, p) => s + p.amount, 0); });
+    save();
+  }
 
-    sale(0, [[pr[0], 2], [pr[8], 2]], 'efectivo', lu);
-    sale(0, [[pr[4], 1]], 'transferencia', to);
-    sale(1, [[pr[1], 3]], 'transferencia', ca, false, [{ date: d(1), amount: 15, method: 'efectivo' }]);
-    sale(2, [[pr[6], 4], [pr[3], 1]], 'tarjeta', null);
-    sale(3, [[pr[5], 1], [pr[0], 1]], 'efectivo', lu);
-    sale(4, [[pr[2], 2]], 'transferencia', to, false);
-    sale(5, [[pr[0], 3], [pr[7], 2]], 'efectivo', null);
-    sale(6, [[pr[4], 2]], 'transferencia', ca);
-    sale(9, [[pr[3], 2], [pr[6], 2]], 'efectivo', null);
-    sale(14, [[pr[0], 4]], 'transferencia', lu);
-    exp(1, 120, 'Mercadería', 'Compra de esencias', dist, false);
-    exp(2, 18, 'Envíos', 'Envíos de la semana', null);
-    exp(4, 45, 'Insumos', 'Frascos y atomizadores', env);
-    exp(6, 25, 'Publicidad', 'Anuncios en Instagram', null);
-    exp(12, 60, 'Servicios', 'Internet y teléfono', null);
+  // Borra ventas, gastos y contactos de ejemplo, y deja los productos.
+  function clearDemo() {
+    db.movements = db.movements.filter(m => !m.demo);
+    db.contacts = db.contacts.filter(c => !/de ejemplo/.test(c.name));
+    db.settings.demo = false;
+    db.settings.nextReceipt = 1 + db.movements.filter(m => m.type === 'venta').reduce((n, m) => Math.max(n, m.number), 0);
     save();
   }
 
@@ -114,6 +107,7 @@ const Store = (() => {
     uid, today, localISO, round, paidOf, balanceOf,
     save,
     reseed() { seed(); },
+    clearDemo,
     wipe() { db = empty(); save(); },
 
     // Productos
