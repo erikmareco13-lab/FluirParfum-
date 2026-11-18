@@ -2,7 +2,7 @@
 
 App web instalable en el celular (PWA). No necesita servidor ni base de datos para funcionar.
 
-**Diseño:** el panel usa el tema "Índigo", con tipografía Plus Jakarta Sans, violeta índigo como color principal y superficies limpias. Tiene modo claro, oscuro o automático (Ajustes → Apariencia). El catálogo público (`catalogo.html`) tiene su propia estética, inspirada en la web de Fluir Parfum.
+**Diseño:** el panel usa el tema "Índigo", con tipografía Plus Jakarta Sans, violeta índigo como color principal y superficies limpias. Tiene modo claro, oscuro o automático (Ajustes → Apariencia). El catálogo público (`catalogo.html`) usa el mismo diseño y se pone en modo oscuro solo cuando el celular del cliente está en modo oscuro.
 
 ## Qué incluye
 
