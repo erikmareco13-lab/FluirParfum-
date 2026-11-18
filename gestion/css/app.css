@@ -218,7 +218,9 @@ img { max-width: 100%; display: block; }
 .btn--soft:hover { background: color-mix(in srgb, var(--primary) 18%, transparent); filter: none; }
 .btn--danger { background: var(--danger-soft); color: var(--danger); box-shadow: none; }
 .btn--danger:hover { background: var(--danger); color: #fff; filter: none; }
+.btn--danger-solid { background: var(--danger); color: #fff; box-shadow: none; }
 .btn--block { width: 100%; }
+.new-contact { display: grid; gap: 8px; margin-top: 8px; padding: 12px; border-radius: 14px; background: var(--surface-2); }
 .btn--sm { min-height: 38px; padding: 7px 14px; font-size: .8rem; border-radius: 12px; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
 

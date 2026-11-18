@@ -69,13 +69,27 @@
     mount?.(sheet);
     const f = sheet.querySelector('input:not([type=radio]):not([type=checkbox]), select'); if (f && matchMedia('(min-width: 700px)').matches) f.focus();
   }
+  let onSheetClose = null;
   function closeSheet() {
+    const cb = onSheetClose; onSheetClose = null; cb?.();
     sheet.classList.remove('is-on'); backdrop.classList.remove('is-on');
     setTimeout(() => { sheet.hidden = backdrop.hidden = true; sheet.innerHTML = ''; }, 300);
   }
   backdrop.addEventListener('click', closeSheet);
+  window.addEventListener('store-full', () => toast('No hay espacio para guardar. Usá fotos más livianas o descargá un respaldo.'));
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
-  const confirmAsk = msg => window.confirm(msg);
+  function confirmAsk(msg, okLabel = 'Confirmar', danger = true) {
+    return new Promise(resolve => {
+      openSheet(`
+        <h3>¿Estás seguro?</h3>
+        <p class="muted" style="margin-bottom:20px">${esc(msg)}</p>
+        <div class="grid-2"><button type="button" class="btn btn--soft" id="cfNo">Cancelar</button><button type="button" class="btn ${danger ? 'btn--danger-solid' : ''}" id="cfYes">${esc(okLabel)}</button></div>`, root => {
+        onSheetClose = () => resolve(false);
+        $('#cfNo', root).onclick = () => closeSheet();
+        $('#cfYes', root).onclick = () => { onSheetClose = null; closeSheet(); resolve(true); };
+      });
+    });
+  }
 
   // ---------- Navegación ----------
   const NAV = [
@@ -92,17 +106,17 @@
     $('#sidebar').innerHTML = `
       <div class="brand">${esc(S.settings.businessName)}</div>
       <div class="brand-sub">Panel de gestión</div>
-      ${NAV.map(n => `<a href="#/${n.r}" class="${group === n.r ? 'is-active' : ''}">${icon(n.icon)}${n.label}</a>`).join('')}
+      ${NAV.map(n => `<a href="#${n.r}" class="${group === n.r ? 'is-active' : ''}">${icon(n.icon)}${n.label}</a>`).join('')}
       <a href="catalogo.html" target="_blank" rel="noopener">${icon('store')}Ver catálogo</a>
-      <a href="#/venta" class="side-cta">${icon('plus', 18, 2)}Nueva venta</a>
+      <a href="#venta" class="side-cta">${icon('plus', 18, 2)}Nueva venta</a>
       <div class="side-foot">Datos guardados en este dispositivo</div>`;
     const inMore = ['deudas', 'contactos', 'reportes', 'ajustes', 'mas'].includes(group);
     $('#tabbar').innerHTML = `
-      <a href="#/inicio" class="${group === 'inicio' ? 'is-active' : ''}">${icon('home')}Balance</a>
-      <a href="#/movimientos" class="${group === 'movimientos' ? 'is-active' : ''}">${icon('list')}Movim.</a>
-      <a href="#/venta" class="fab" aria-label="Nueva venta">${icon('plus', 26, 2)}</a>
-      <a href="#/inventario" class="${group === 'inventario' ? 'is-active' : ''}">${icon('box')}Inventario</a>
-      <a href="#/mas" class="${inMore ? 'is-active' : ''}">${icon('more')}Más</a>`;
+      <a href="#inicio" class="${group === 'inicio' ? 'is-active' : ''}">${icon('home')}Balance</a>
+      <a href="#movimientos" class="${group === 'movimientos' ? 'is-active' : ''}">${icon('list')}Movim.</a>
+      <a href="#venta" class="fab" aria-label="Nueva venta">${icon('plus', 26, 2)}</a>
+      <a href="#inventario" class="${group === 'inventario' ? 'is-active' : ''}">${icon('box')}Inventario</a>
+      <a href="#mas" class="${inMore ? 'is-active' : ''}">${icon('more')}Más</a>`;
   }
 
   const topbar = (title, sub = '', opts = {}) => `
@@ -224,7 +238,7 @@
     const due = S.balanceOf(m);
     const title = isV ? (m.items.length ? m.items.map(i => `${i.qty}× ${i.name}`).join(', ') : (m.concept || 'Venta')) : (m.concept || m.category);
     const meta = [isV ? `Venta #${m.number}` : m.category, c?.name, methodLabel(m.method)].filter(Boolean).join(' · ');
-    return `<a class="item" href="#/mov/${m.id}">
+    return `<a class="item" href="#mov-${m.id}">
       <div class="item__icon ${isV ? 'is-sale' : 'is-expense'}">${icon(isV ? 'up' : 'down', 18, 2)}</div>
       <div class="item__body"><div class="item__title">${esc(title)}</div><div class="item__meta">${esc(meta)}</div></div>
       <div class="item__end"><b class="${isV ? 'amount-in' : 'amount-out'}">${isV ? '+' : '−'}${money(m.total)}</b>${due > 0 ? `<span class="tag tag--debt">Debe ${money(due)}</span>` : ''}</div>
@@ -247,7 +261,7 @@
     const low = S.data.products.filter(p => p.stock <= (p.minStock || 0));
     const recent = [...S.data.movements].sort(sortDesc).slice(0, 6);
     view.innerHTML = `
-      ${topbar(`Hola, <em>${esc(S.settings.businessName)}</em>`, new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }), { action: `<a class="icon-btn hide-desk" href="#/ajustes" aria-label="Ajustes">${icon('gear')}</a>` })}
+      ${topbar(`Hola, <em>${esc(S.settings.businessName)}</em>`, new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }), { action: `<a class="icon-btn hide-desk" href="#ajustes" aria-label="Ajustes">${icon('gear')}</a>` })}
       ${periodBar(state.period)}
       <section class="hero-balance">
         <div class="label">Balance · ${PERIODS[state.period]}</div>
@@ -258,15 +272,15 @@
         </div>
       </section>
       <div class="quick">
-        <a class="btn btn--sale" href="#/venta">${icon('plus', 18, 2)}Nueva venta</a>
-        <a class="btn btn--expense" href="#/gasto">${icon('down', 18, 2)}Nuevo gasto</a>
+        <a class="btn btn--sale" href="#venta">${icon('plus', 18, 2)}Nueva venta</a>
+        <a class="btn btn--expense" href="#gasto">${icon('down', 18, 2)}Nuevo gasto</a>
       </div>
 
       <div class="stats mt">
         <div class="stat"><span>Ganancia bruta</span><b>${money(k.bruta)}</b><small>Ventas − costo de lo vendido</small></div>
         <div class="stat"><span>N.º de ventas</span><b>${k.ventas.length}</b><small>Ticket promedio ${money(k.ticket)}</small></div>
-        <a class="stat" href="#/deudas" style="text-decoration:none"><span>Te deben</span><b class="amount-out">${money(k.porCobrar)}</b><small>Ventas fiadas del periodo</small></a>
-        <a class="stat" href="#/deudas" style="text-decoration:none"><span>Debés</span><b>${money(k.porPagar)}</b><small>Gastos sin pagar</small></a>
+        <a class="stat" href="#deudas" style="text-decoration:none"><span>Te deben</span><b class="amount-out">${money(k.porCobrar)}</b><small>Ventas fiadas del periodo</small></a>
+        <a class="stat" href="#deudas" style="text-decoration:none"><span>Debés</span><b>${money(k.porPagar)}</b><small>Gastos sin pagar</small></a>
       </div>
 
       <div class="section-title"><h2>Ventas y gastos</h2></div>
@@ -275,10 +289,10 @@
         <div class="chart-wrap" id="chart"></div>
       </div>
 
-      ${low.length ? `<div class="section-title"><h2>Stock bajo</h2><a href="#/inventario" data-low>Ver inventario →</a></div>
-      <div class="list">${low.slice(0, 4).map(p => `<a class="item" href="#/producto/${p.id}"><div class="item__icon">${productThumb(p)}</div><div class="item__body"><div class="item__title">${esc(p.name)}</div><div class="item__meta">Mínimo sugerido: ${p.minStock}</div></div><div class="item__end"><span class="tag ${p.stock <= 0 ? 'tag--debt' : 'tag--warn'}">${p.stock <= 0 ? 'Agotado' : `Quedan ${p.stock}`}</span></div></a>`).join('')}</div>` : ''}
+      ${low.length ? `<div class="section-title"><h2>Stock bajo</h2><a href="#inventario" data-low>Ver inventario →</a></div>
+      <div class="list">${low.slice(0, 4).map(p => `<a class="item" href="#producto-${p.id}"><div class="item__icon">${productThumb(p)}</div><div class="item__body"><div class="item__title">${esc(p.name)}</div><div class="item__meta">Mínimo sugerido: ${p.minStock}</div></div><div class="item__end"><span class="tag ${p.stock <= 0 ? 'tag--debt' : 'tag--warn'}">${p.stock <= 0 ? 'Agotado' : `Quedan ${p.stock}`}</span></div></a>`).join('')}</div>` : ''}
 
-      <div class="section-title"><h2>Últimos movimientos</h2><a href="#/movimientos">Ver todos →</a></div>
+      <div class="section-title"><h2>Últimos movimientos</h2><a href="#movimientos">Ver todos →</a></div>
       <div class="list">${recent.length ? recent.map(movRow).join('') : `<div class="empty"><b>Todavía no hay movimientos</b>Registrá tu primera venta con el botón +</div>`}</div>`;
     bindSeg(view, () => views.inicio());
     drawChart($('#chart'), state.period);
@@ -299,7 +313,7 @@
     const byDay = {};
     movs.forEach(m => (byDay[m.date] ||= []).push(m));
     view.innerHTML = `
-      ${topbar('Movimientos', 'Ventas y gastos', { action: `<a class="btn btn--sm" href="#/gasto">${icon('down', 16, 2)}Gasto</a>` })}
+      ${topbar('Movimientos', 'Ventas y gastos', { action: `<a class="btn btn--sm" href="#gasto">${icon('down', 16, 2)}Gasto</a>` })}
       ${periodBar(state.period)}
       <div class="segmented" data-seg="movFilter">${[['todos', 'Todos'], ['ventas', 'Ventas'], ['gastos', 'Gastos'], ['deuda', 'Con deuda']].map(([v, l]) => `<button data-v="${v}" class="${state.movFilter === v ? 'is-active' : ''}">${l}</button>`).join('')}</div>
       <div class="search">${icon('search', 18)}<input class="input" id="q" type="search" placeholder="Buscar por producto, cliente o N.º" value="${esc(state.movSearch)}"></div>
@@ -318,13 +332,13 @@
   // ---------- Detalle de movimiento / recibo ----------
   views.mov = id => {
     const m = S.movement(id);
-    if (!m) { location.hash = '#/movimientos'; return; }
+    if (!m) { location.hash = '#movimientos'; return; }
     const c = S.contact(m.contactId);
     const isV = m.type === 'venta';
     const due = S.balanceOf(m);
     const st = S.settings;
     view.innerHTML = `
-      ${topbar(isV ? `Venta <em>#${m.number}</em>` : esc(m.concept || m.category), isV ? 'Recibo' : 'Gasto', { back: '#/movimientos' })}
+      ${topbar(isV ? `Venta <em>#${m.number}</em>` : esc(m.concept || m.category), isV ? 'Recibo' : 'Gasto', { back: '#movimientos' })}
       <div class="receipt" id="receipt">
         <div class="receipt__brand">${esc(st.businessName)}</div>
         <div class="receipt__sub">${isV ? `Comprobante de venta N.º ${m.number}` : 'Comprobante de gasto'}</div>
@@ -350,9 +364,9 @@
       <button class="btn btn--danger btn--block mt-l" id="del">${icon('trash', 18)}Eliminar ${isV ? 'venta' : 'gasto'}</button>`;
     $('#print').onclick = () => window.print();
     $('#pay')?.addEventListener('click', () => paySheet(m, () => views.mov(id)));
-    $('#del').onclick = () => {
-      if (!confirmAsk(`¿Eliminar este ${isV ? 'registro de venta' : 'gasto'}? ${isV || m.restock ? 'El stock se va a ajustar.' : ''}`)) return;
-      S.deleteMovement(id); toast('Eliminado'); location.hash = '#/movimientos';
+    $('#del').onclick = async () => {
+      if (!(await confirmAsk(`Vas a eliminar este ${isV ? 'registro de venta' : 'gasto'}. ${isV || m.restock ? 'El stock se va a ajustar.' : ''}`, 'Eliminar'))) return;
+      S.deleteMovement(id); toast('Eliminado'); location.hash = '#movimientos';
     };
   };
   function receiptText(m) {
@@ -385,14 +399,22 @@
   const methodChoices = (name, cur) => Object.entries(METHODS).map(([k, v]) => `<input type="radio" name="${name}" id="${name}-${k}" value="${k}" ${k === cur ? 'checked' : ''}><label for="${name}-${k}">${v}</label>`).join('');
   const contactOptions = (type, cur) => `<option value="">— Sin ${type === 'cliente' ? 'cliente' : 'proveedor'} —</option>${S.data.contacts.filter(c => c.type === type).map(c => `<option value="${c.id}" ${c.id === cur ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}<option value="__new">+ Crear nuevo…</option>`;
   function bindContactSelect(sel, type) {
-    sel.addEventListener('change', () => {
-      if (sel.value !== '__new') return;
-      const name = prompt(`Nombre del ${type}`);
-      if (!name) { sel.value = ''; return; }
-      const phone = prompt('WhatsApp (con código de país, opcional)') || '';
-      const c = S.upsertContact({ name: name.trim(), phone: phone.trim(), type, notes: '' });
-      sel.innerHTML = contactOptions(type, c.id);
-    });
+    const box = document.createElement('div');
+    box.className = 'new-contact'; box.hidden = true;
+    box.innerHTML = `<input class="input" id="nc-${type}-name" placeholder="Nombre del ${type}" aria-label="Nombre del ${type}">
+      <input class="input" id="nc-${type}-phone" inputmode="tel" placeholder="WhatsApp con código de país (opcional)" aria-label="WhatsApp">
+      <div class="grid-2"><button type="button" class="btn btn--sm btn--soft" data-x>Cancelar</button><button type="button" class="btn btn--sm" data-ok>Crear ${type}</button></div>`;
+    sel.after(box);
+    const [nameI, phoneI] = $$('input', box);
+    sel.addEventListener('change', () => { box.hidden = sel.value !== '__new'; if (!box.hidden) nameI.focus(); });
+    $('[data-x]', box).onclick = () => { sel.value = ''; box.hidden = true; };
+    $('[data-ok]', box).onclick = () => {
+      const name = nameI.value.trim();
+      if (!name) { toast('Escribí el nombre'); nameI.focus(); return; }
+      const c = S.upsertContact({ name, phone: phoneI.value.trim(), type, notes: '' });
+      sel.innerHTML = contactOptions(type, c.id); box.hidden = true; nameI.value = phoneI.value = '';
+      toast(`${type === 'cliente' ? 'Cliente' : 'Proveedor'} creado`);
+    };
   }
 
   // ---------- Nueva venta ----------
@@ -404,7 +426,7 @@
     const total = [...cart.entries()].reduce((s, [id, qty]) => s + qty * (S.product(id)?.price || 0), 0);
     const units = [...cart.values()].reduce((s, n) => s + n, 0);
     view.innerHTML = `
-      ${topbar('Nueva <em>venta</em>', 'Elegí los productos', { back: '#/inicio', action: `<button class="btn btn--sm btn--soft" id="free">Venta libre</button>` })}
+      ${topbar('Nueva <em>venta</em>', 'Elegí los productos', { back: '#inicio', action: `<button class="btn btn--sm btn--soft" id="free">Venta libre</button>` })}
       <div class="search">${icon('search', 18)}<input class="input" id="q" type="search" placeholder="Buscar producto" value="${esc(state.saleSearch)}"></div>
       <div class="segmented" id="cats">${cats.map(c => `<button data-c="${esc(c)}" class="${state.saleCat === c ? 'is-active' : ''}">${esc(c)}</button>`).join('')}</div>
       ${prods.length ? `<div class="pick-grid">${prods.map(p => {
@@ -420,9 +442,9 @@
     const qi = $('#q');
     qi.addEventListener('input', debounce(() => { state.saleSearch = qi.value; views.venta(); const n = $('#q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 200));
     $('#cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { state.saleCat = b.dataset.c; views.venta(); } };
-    $$('.pick').forEach(b => b.onclick = () => {
+    $$('.pick').forEach(b => b.onclick = async () => {
       const p = S.product(b.dataset.id); const n = (cart.get(p.id) || 0) + 1;
-      if (n > p.stock && !confirmAsk(`Solo hay ${p.stock} en stock de “${p.name}”. ¿Vender igual?`)) return;
+      if (n > p.stock && !(await confirmAsk(`Solo hay ${p.stock} en stock de “${p.name}”. ¿Querés venderlo igual?`, 'Vender igual', false))) return;
       cart.set(p.id, n); const y = scrollY; views.venta(); scrollTo(0, y);
     });
     $('#clear')?.addEventListener('click', () => { cart.clear(); views.venta(); });
@@ -495,7 +517,7 @@
         });
         cart.clear(); state.saleSearch = '';
         closeSheet(); toast(`Venta #${m.number} registrada`);
-        location.hash = '#/mov/' + m.id;
+        location.hash = '#mov-' + m.id;
       };
     });
   }
@@ -504,7 +526,7 @@
   const EXP_CATS = ['Mercadería', 'Insumos', 'Envíos', 'Publicidad', 'Servicios', 'Alquiler', 'Sueldos', 'Impuestos', 'Otros'];
   views.gasto = () => {
     view.innerHTML = `
-      ${topbar('Nuevo <em>gasto</em>', 'Registrá una salida de dinero', { back: '#/inicio' })}
+      ${topbar('Nuevo <em>gasto</em>', 'Registrá una salida de dinero', { back: '#inicio' })}
       <form class="card" id="gf">
         <div class="field"><label for="gAmt">Monto</label><input class="input input--big" id="gAmt" inputmode="decimal" placeholder="0" required></div>
         <div class="field"><span class="label-sm">Categoría</span><div class="choice">${EXP_CATS.map((c, i) => `<input type="radio" name="gc" id="gc${i}" value="${c}" ${i === 0 ? 'checked' : ''}><label for="gc${i}">${c}</label>`).join('')}</div></div>
@@ -548,7 +570,7 @@
         concept: $('#gCon').value.trim() || category, payments: status === 'pagado' ? [{ date, amount: total, method }] : [],
       });
       toast(items.length ? 'Gasto guardado y stock actualizado' : 'Gasto guardado');
-      location.hash = '#/mov/' + m.id;
+      location.hash = '#mov-' + m.id;
     };
   };
 
@@ -565,7 +587,7 @@
     const valSale = ps.reduce((s, p) => s + Math.max(0, p.stock) * p.price, 0);
     const lowN = ps.filter(p => p.stock <= (p.minStock || 0)).length;
     view.innerHTML = `
-      ${topbar('Inventario', `${ps.length} productos`, { action: `<a class="btn btn--sm" href="#/producto/nuevo">${icon('plus', 16, 2)}Producto</a>` })}
+      ${topbar('Inventario', `${ps.length} productos`, { action: `<a class="btn btn--sm" href="#producto-nuevo">${icon('plus', 16, 2)}Producto</a>` })}
       <div class="stats">
         <div class="stat"><span>Unidades</span><b>${units}</b></div>
         <div class="stat"><span>Stock bajo</span><b class="${lowN ? 'amount-out' : ''}">${lowN}</b></div>
@@ -577,7 +599,7 @@
       <div class="list">${list.length ? list.map(p => {
         const margin = p.price ? Math.round((1 - (p.cost || 0) / p.price) * 100) : 0;
         const tag = p.stock <= 0 ? '<span class="tag tag--debt">Agotado</span>' : p.stock <= (p.minStock || 0) ? `<span class="tag tag--warn">Bajo · ${p.stock}</span>` : `<span class="tag tag--ok">${p.stock} u.</span>`;
-        return `<a class="item" href="#/producto/${p.id}"><div class="item__icon">${productThumb(p)}</div>
+        return `<a class="item" href="#producto-${p.id}"><div class="item__icon">${productThumb(p)}</div>
           <div class="item__body"><div class="item__title">${esc(p.name)}</div><div class="item__meta">${esc(p.category || 'Sin categoría')} · Margen ${margin}%${p.inCatalog ? '' : ' · Oculto en catálogo'}</div></div>
           <div class="item__end"><b>${money(p.price)}</b>${tag}</div></a>`;
       }).join('') : `<div class="empty"><b>Sin productos</b>${ps.length ? 'Probá con otra búsqueda.' : 'Agregá tu primer producto.'}</div>`}</div>
@@ -591,11 +613,11 @@
   views.producto = id => {
     const isNew = id === 'nuevo';
     const p = isNew ? { name: '', category: '', family: 'floral', notes: '', price: '', cost: '', stock: '', minStock: 3, badge: '', image: '', inCatalog: true } : S.product(id);
-    if (!p) { location.hash = '#/inventario'; return; }
+    if (!p) { location.hash = '#inventario'; return; }
     const cats = [...new Set(S.data.products.map(x => x.category).filter(Boolean))];
     const sold = isNew ? 0 : S.data.movements.filter(m => m.type === 'venta').reduce((s, m) => s + m.items.filter(i => i.productId === id).reduce((a, i) => a + i.qty, 0), 0);
     view.innerHTML = `
-      ${topbar(isNew ? 'Nuevo <em>producto</em>' : esc(p.name), isNew ? 'Inventario' : `${sold} unidades vendidas`, { back: '#/inventario' })}
+      ${topbar(isNew ? 'Nuevo <em>producto</em>' : esc(p.name), isNew ? 'Inventario' : `${sold} unidades vendidas`, { back: '#inventario' })}
       <form class="card" id="pf">
         <div class="field" style="justify-items:center">
           <label for="img" style="cursor:pointer;display:grid;justify-items:center;gap:8px;text-transform:none;letter-spacing:0">
@@ -644,11 +666,11 @@
       };
       if (!data.name) return toast('Poné un nombre');
       if (!isNew) data.id = id;
-      if (S.upsertProduct(data)) { toast(isNew ? 'Producto creado' : 'Cambios guardados'); location.hash = '#/inventario'; }
+      if (S.upsertProduct(data)) { toast(isNew ? 'Producto creado' : 'Cambios guardados'); location.hash = '#inventario'; }
     };
-    $('#pdel')?.addEventListener('click', () => {
-      if (!confirmAsk(`¿Eliminar “${p.name}”? Las ventas pasadas se conservan.`)) return;
-      S.deleteProduct(id); toast('Producto eliminado'); location.hash = '#/inventario';
+    $('#pdel')?.addEventListener('click', async () => {
+      if (!(await confirmAsk(`Vas a eliminar “${p.name}”. Las ventas pasadas se conservan.`, 'Eliminar'))) return;
+      S.deleteProduct(id); toast('Producto eliminado'); location.hash = '#inventario';
     });
   };
   function resizeImage(file, max, quality) {
@@ -699,7 +721,7 @@
       <div class="segmented" data-seg="contactTab"><button data-v="cliente" class="${t === 'cliente' ? 'is-active' : ''}">Clientes</button><button data-v="proveedor" class="${t === 'proveedor' ? 'is-active' : ''}">Proveedores</button></div>
       <div class="list">${list.length ? list.map(c => {
         const b = balance(c);
-        return `<a class="item" href="#/contacto/${c.id}"><div class="item__icon">${esc(initials(c.name))}</div><div class="item__body"><div class="item__title">${esc(c.name)}</div><div class="item__meta">${esc(c.phone || 'Sin teléfono')}</div></div><div class="item__end">${b > 0 ? `<span class="tag tag--debt">${t === 'cliente' ? 'Debe' : 'Le debés'} ${money(b)}</span>` : '<span class="tag tag--ok">Al día</span>'}</div></a>`;
+        return `<a class="item" href="#contacto-${c.id}"><div class="item__icon">${esc(initials(c.name))}</div><div class="item__body"><div class="item__title">${esc(c.name)}</div><div class="item__meta">${esc(c.phone || 'Sin teléfono')}</div></div><div class="item__end">${b > 0 ? `<span class="tag tag--debt">${t === 'cliente' ? 'Debe' : 'Le debés'} ${money(b)}</span>` : '<span class="tag tag--ok">Al día</span>'}</div></a>`;
       }).join('') : `<div class="empty"><b>Sin ${t === 'cliente' ? 'clientes' : 'proveedores'}</b>Agregalos para fiar, enviar recibos y recordatorios.</div>`}</div>`;
     bindSeg(view, () => views.contactos());
     $('#nc').onclick = () => contactSheet({ type: t });
@@ -726,11 +748,11 @@
   }
   views.contacto = id => {
     const c = S.contact(id);
-    if (!c) { location.hash = '#/contactos'; return; }
+    if (!c) { location.hash = '#contactos'; return; }
     const ms = S.data.movements.filter(m => m.contactId === id).sort(sortDesc);
     const total = ms.reduce((s, m) => s + m.total, 0), due = ms.reduce((s, m) => s + S.balanceOf(m), 0);
     view.innerHTML = `
-      ${topbar(esc(c.name), c.type === 'cliente' ? 'Cliente' : 'Proveedor', { back: '#/contactos', action: `<button class="icon-btn" id="ed" aria-label="Editar">${icon('edit')}</button>` })}
+      ${topbar(esc(c.name), c.type === 'cliente' ? 'Cliente' : 'Proveedor', { back: '#contactos', action: `<button class="icon-btn" id="ed" aria-label="Editar">${icon('edit')}</button>` })}
       <div class="stats">
         <div class="stat"><span>${c.type === 'cliente' ? 'Compras' : 'Compras a él'}</span><b>${money(total)}</b><small>${ms.length} movimientos</small></div>
         <div class="stat"><span>Saldo pendiente</span><b class="${due > 0 ? 'amount-out' : ''}">${money(due)}</b></div>
@@ -744,10 +766,10 @@
       <div class="list">${ms.length ? ms.map(movRow).join('') : '<div class="empty">Sin movimientos todavía.</div>'}</div>
       <button class="btn btn--danger btn--block mt-l" id="cdel">Eliminar contacto</button>`;
     $('#ed').onclick = () => contactSheet(c);
-    $('#cdel').onclick = () => {
-      if (due > 0 && !confirmAsk('Este contacto tiene saldo pendiente. ¿Eliminar igual? Los movimientos quedan sin contacto.')) return;
-      if (due <= 0 && !confirmAsk(`¿Eliminar a ${c.name}?`)) return;
-      S.deleteContact(id); toast('Contacto eliminado'); location.hash = '#/contactos';
+    $('#cdel').onclick = async () => {
+      const msg = due > 0 ? `${c.name} tiene un saldo pendiente de ${money(due)}. Si lo eliminás, sus movimientos quedan sin contacto.` : `Vas a eliminar a ${c.name}.`;
+      if (!(await confirmAsk(msg, 'Eliminar'))) return;
+      S.deleteContact(id); toast('Contacto eliminado'); location.hash = '#contactos';
     };
   };
 
@@ -805,7 +827,7 @@
     view.innerHTML = `${topbar('Más', S.settings.businessName)}
       <div class="list">
         ${[['deudas', 'debt', 'Deudas', 'Fiados y cuentas por pagar'], ['contactos', 'users', 'Contactos', 'Clientes y proveedores'], ['reportes', 'chart', 'Reportes', 'Más vendidos, medios de pago, CSV'], ['gasto', 'down', 'Nuevo gasto', 'Registrar una salida de dinero'], ['ajustes', 'gear', 'Ajustes', 'Datos del negocio, respaldo, PIN']]
-          .map(([r, ic, t, d]) => `<a class="item" href="#/${r}"><div class="item__icon">${icon(ic)}</div><div class="item__body"><div class="item__title">${t}</div><div class="item__meta">${d}</div></div></a>`).join('')}
+          .map(([r, ic, t, d]) => `<a class="item" href="#${r}"><div class="item__icon">${icon(ic)}</div><div class="item__body"><div class="item__title">${t}</div><div class="item__meta">${d}</div></div></a>`).join('')}
         <a class="item" href="catalogo.html" target="_blank" rel="noopener"><div class="item__icon">${icon('store')}</div><div class="item__body"><div class="item__title">Ver catálogo</div><div class="item__meta">Tu tienda para compartir con clientes</div></div></a>
       </div>`;
   };
@@ -852,7 +874,7 @@
       S.save(); if (pin) sessionStorage.setItem('unlocked', '1');
       toast('Ajustes guardados'); applyTheme(); render();
     };
-    $('#cpy').onclick = () => navigator.clipboard?.writeText(catalogURL).then(() => toast('Enlace copiado'), () => prompt('Copiá el enlace:', catalogURL));
+    $('#cpy').onclick = () => navigator.clipboard?.writeText(catalogURL).then(() => toast('Enlace copiado'), () => toast('Copiá este enlace: ' + catalogURL));
     $('#pub').onclick = () => {
       const pub = { settings: { businessName: st.businessName, tagline: st.tagline, whatsapp: st.whatsapp, currency: st.currency, locale: st.locale },
         products: S.data.products.filter(p => p.inCatalog).map(({ id, name, category, family, notes, price, stock, badge, image }) => ({ id, name, category, family, notes, price, inStock: stock > 0, badge, image })), updatedAt: new Date().toISOString() };
@@ -861,17 +883,21 @@
     $('#exp').onclick = () => download(`respaldo-${S.today()}.json`, S.exportJSON(), 'application/json');
     $('#imp').onchange = async e => {
       const f = e.target.files[0]; if (!f) return;
-      if (!confirmAsk('Esto reemplaza todos los datos actuales por los del respaldo. ¿Continuar?')) return;
+      e.target.value = '';
+      if (!(await confirmAsk('Esto reemplaza todos los datos actuales por los del respaldo.', 'Restaurar'))) return;
       try { S.importJSON(await f.text()); toast('Respaldo restaurado'); render(); } catch { toast('El archivo no es un respaldo válido'); }
     };
-    $('#seed').onclick = () => { if (confirmAsk('Se reemplazan tus datos por datos de ejemplo. ¿Continuar?')) { S.reseed(); toast('Datos de ejemplo cargados'); location.hash = '#/inicio'; } };
-    $('#wipe').onclick = () => { if (confirmAsk('¿Borrar TODOS los datos? Esto no se puede deshacer. Descargá un respaldo antes.')) { S.wipe(); toast('Datos borrados'); location.hash = '#/inicio'; } };
+    $('#seed').onclick = async () => { if (await confirmAsk('Tus datos se van a reemplazar por datos de ejemplo.', 'Cargar ejemplo')) { S.reseed(); toast('Datos de ejemplo cargados'); location.hash = '#inicio'; } };
+    $('#wipe').onclick = async () => { if (await confirmAsk('Se borran todos los productos, ventas, gastos y contactos. No se puede deshacer, así que descargá un respaldo antes.', 'Borrar todo')) { S.wipe(); toast('Datos borrados'); location.hash = '#inicio'; } };
   };
 
   // ---------- Router ----------
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
   function render() {
-    const [route = 'inicio', arg] = location.hash.replace(/^#\/?/, '').split('/');
+    const h = location.hash.replace(/^#\/?/, '').replace('/', '-');
+    const cut = h.indexOf('-');
+    const route = (cut < 0 ? h : h.slice(0, cut)) || 'inicio';
+    const arg = cut < 0 ? undefined : h.slice(cut + 1);
     const fn = views[route] || views.inicio;
     renderNav(route);
     if (!sheet.hidden) closeSheet();

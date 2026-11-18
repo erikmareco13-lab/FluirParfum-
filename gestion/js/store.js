@@ -41,7 +41,7 @@ const Store = (() => {
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(db)); return true; }
     catch (e) {
-      alert('No hay espacio para guardar. Probá con fotos más livianas o exportá un respaldo.');
+      window.dispatchEvent(new Event('store-full'));
       return false;
     }
   }

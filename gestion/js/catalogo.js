@@ -128,20 +128,29 @@
   };
 
   const drawer = $('#drawer'), backdrop = $('#backdrop');
-  const open = () => { drawLines(); drawer.hidden = backdrop.hidden = false; requestAnimationFrame(() => { drawer.classList.add('is-on'); backdrop.classList.add('is-on'); }); };
+  const open = () => { drawLines(); refreshLink(); drawer.hidden = backdrop.hidden = false; requestAnimationFrame(() => { drawer.classList.add('is-on'); backdrop.classList.add('is-on'); }); };
   const close = () => { drawer.classList.remove('is-on'); backdrop.classList.remove('is-on'); setTimeout(() => { drawer.hidden = backdrop.hidden = true; }, 400); };
   $('#cartBtn').onclick = open; $('#floatCart').onclick = open;
   $('#close').onclick = close; backdrop.onclick = close;
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 
-  $('#orderForm').onsubmit = e => {
-    e.preventDefault();
-    if (!wa) { toast('El negocio todavía no cargó su WhatsApp'); return; }
+  // El envío usa un enlace real: así abre WhatsApp en cualquier navegador o visor.
+  const orderMsg = () => {
     const name = $('#cName').value.trim(), note = $('#cNote').value.trim();
     const lines = Object.entries(cart).map(([id, n]) => { const p = byId(id); return `• ${n} × ${p.name} — ${money(n * p.price)}`; });
-    const msg = [`Hola ${st.businessName}! Quiero hacer este pedido:`, '', ...lines, '', `*Total: ${money(total())}*`, '', `Nombre: ${name}`, ...(note ? [`Comentarios: ${note}`] : [])].join('\n');
-    window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
-    cart = {}; saveCart(); paintCount(); close();
+    return [`Hola ${st.businessName}! Quiero hacer este pedido:`, '', ...lines, '', `*Total: ${money(total())}*`, '', `Nombre: ${name}`, ...(note ? [`Comentarios: ${note}`] : [])].join('\n');
+  };
+  const sendWa = $('#sendWa');
+  const refreshLink = () => { sendWa.href = wa ? `https://wa.me/${wa}?text=${encodeURIComponent(orderMsg())}` : '#'; };
+  $('#orderForm').addEventListener('input', refreshLink);
+  $('#orderForm').onsubmit = e => { e.preventDefault(); sendWa.click(); };
+  sendWa.addEventListener('pointerenter', refreshLink);
+  sendWa.addEventListener('focus', refreshLink);
+  sendWa.onclick = e => {
+    refreshLink();
+    if (!wa) { e.preventDefault(); toast('El negocio todavía no cargó su WhatsApp'); return; }
+    if (!$('#cName').value.trim()) { e.preventDefault(); toast('Escribí tu nombre para enviar el pedido'); $('#cName').focus(); return; }
+    setTimeout(() => { cart = {}; saveCart(); paintCount(); close(); }, 300);
   };
 
   paintCount();
