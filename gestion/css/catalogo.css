@@ -105,6 +105,16 @@ img { max-width: 100%; display: block; }
 .add:hover { filter: brightness(1.1); }
 .add:active { transform: scale(.92); }
 .add:disabled { background: var(--surface-3); color: var(--muted); box-shadow: none; cursor: not-allowed; }
+.stepper { display: inline-flex; align-items: center; gap: 2px; height: 40px; padding: 3px; border-radius: 13px; background: var(--hero); box-shadow: 0 8px 16px -8px rgba(91,71,245,.9); color: #fff; }
+.stepper button { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; transition: background .15s, transform .15s var(--ease); }
+.stepper button:hover { background: rgba(255,255,255,.16); }
+.stepper button:active { transform: scale(.9); }
+.stepper span { min-width: 22px; text-align: center; font-weight: 800; font-size: .95rem; font-variant-numeric: tabular-nums; }
+.card.is-in { box-shadow: var(--shadow), inset 0 0 0 2px var(--primary); }
+.card__foot { flex-wrap: wrap; row-gap: 8px; }
+.card.is-in .ctl { flex: 1 0 100%; }
+.card.is-in .stepper { width: 100%; justify-content: space-between; }
+.card.is-in .stepper button { width: 40px; }
 .card.is-out .card__media { filter: grayscale(.7); opacity: .75; }
 
 .tone-acuatico { --tone: #22A6C9; } .tone-amaderado { --tone: #A0785A; } .tone-oriental { --tone: #D9466F; }

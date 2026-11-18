@@ -63,29 +63,6 @@
   };
   $('#q').oninput = e => { q = e.target.value.toLowerCase(); draw(); };
 
-  const bottle = () => '<div class="bottle"><div class="bottle__cap"></div><div class="bottle__neck"></div><div class="bottle__body"><div class="bottle__liquid"></div><div class="bottle__shine"></div></div></div>';
-  const grid = $('#products');
-  function draw() {
-    const list = products.filter(p => (cat === 'Todas' || p.category === cat) && (!q || [p.name, p.notes, p.category].join(' ').toLowerCase().includes(q)));
-    grid.innerHTML = list.length ? list.map(p => `
-      <article class="card tone-${esc(p.family || 'floral')} ${p.inStock ? '' : 'is-out'}">
-        <div class="card__media">
-          ${p.inStock ? (p.badge ? `<span class="card__badge">${esc(p.badge)}</span>` : '') : '<span class="card__badge card__badge--out">Agotado</span>'}
-          ${p.image ? `<img src="${p.image}" alt="${esc(p.name)}" loading="lazy">` : bottle()}
-        </div>
-        <div class="card__body">
-          <span class="card__family">${esc(p.category || FAM[p.family] || '')}</span>
-          <h3 class="card__name">${esc(p.name)}</h3>
-          ${p.notes ? `<p class="card__notes">${esc(p.notes)}</p>` : ''}
-          <div class="card__foot">${p.inStock ? `<span class="card__price">${p.price ? money(p.price) : 'Consultar'}</span>` : '<span class="card__out">Agotado</span>'}
-            <button class="add" data-id="${esc(p.id)}" ${p.inStock ? '' : 'disabled'} aria-label="Agregar ${esc(p.name)} al pedido">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-            </button></div>
-        </div>
-      </article>`).join('') : `<div class="empty"><b>${products.length ? 'Sin resultados' : 'Catálogo en preparación'}</b>${products.length ? 'Probá con otra búsqueda.' : 'Muy pronto vas a ver nuestras fragancias acá.'}</div>`;
-  }
-  draw();
-
   // Pedido
   const CART_KEY = 'catalogo-pedido';
   let cart = {};
@@ -95,6 +72,44 @@
   const saveCart = () => { try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch { /* sin almacenamiento */ } };
   const total = () => Object.entries(cart).reduce((s, [id, n]) => s + n * (byId(id)?.price || 0), 0);
   const count = () => Object.values(cart).reduce((s, n) => s + n, 0);
+
+  const bottle = () => '<div class="bottle"><div class="bottle__cap"></div><div class="bottle__neck"></div><div class="bottle__body"><div class="bottle__liquid"></div><div class="bottle__shine"></div></div></div>';
+  const grid = $('#products');
+  const PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  const MINUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>';
+  // Botón "+" para agregar; con el producto en el pedido pasa a "− cantidad +".
+  function ctlHTML(p) {
+    const n = cart[p.id] || 0;
+    if (!p.inStock) return `<button class="add" disabled aria-label="${esc(p.name)} está agotado">${PLUS}</button>`;
+    if (!n) return `<button class="add" data-id="${esc(p.id)}" data-d="1" aria-label="Agregar ${esc(p.name)} al pedido">${PLUS}</button>`;
+    return `<div class="stepper" role="group" aria-label="Cantidad de ${esc(p.name)}">
+      <button type="button" data-id="${esc(p.id)}" data-d="-1" aria-label="Quitar uno">${MINUS}</button>
+      <span aria-live="polite">${n}</span>
+      <button type="button" data-id="${esc(p.id)}" data-d="1" aria-label="Agregar uno">${PLUS}</button></div>`;
+  }
+  const refreshCtl = id => {
+    const p = products.find(x => x.id === id);
+    document.querySelectorAll(`[data-ctl="${CSS.escape(id)}"]`).forEach(el => { el.innerHTML = ctlHTML(p); el.closest('.card')?.classList.toggle('is-in', !!cart[id]); });
+  };
+  const refreshAllCtl = () => products.forEach(p => refreshCtl(p.id));
+  function draw() {
+    const list = products.filter(p => (cat === 'Todas' || p.category === cat) && (!q || [p.name, p.notes, p.category].join(' ').toLowerCase().includes(q)));
+    grid.innerHTML = list.length ? list.map(p => `
+      <article class="card tone-${esc(p.family || 'floral')} ${p.inStock ? '' : 'is-out'} ${cart[p.id] ? 'is-in' : ''}">
+        <div class="card__media">
+          ${p.inStock ? (p.badge ? `<span class="card__badge">${esc(p.badge)}</span>` : '') : '<span class="card__badge card__badge--out">Agotado</span>'}
+          ${p.image ? `<img src="${p.image}" alt="${esc(p.name)}" loading="lazy">` : bottle()}
+        </div>
+        <div class="card__body">
+          <span class="card__family">${esc(p.category || FAM[p.family] || '')}</span>
+          <h3 class="card__name">${esc(p.name)}</h3>
+          ${p.notes ? `<p class="card__notes">${esc(p.notes)}</p>` : ''}
+          <div class="card__foot">${p.inStock ? `<span class="card__price">${p.price ? money(p.price) : 'Consultar'}</span>` : '<span class="card__out">Agotado</span>'}
+            <div class="ctl" data-ctl="${esc(p.id)}">${ctlHTML(p)}</div></div>
+        </div>
+      </article>`).join('') : `<div class="empty"><b>${products.length ? 'Sin resultados' : 'Catálogo en preparación'}</b>${products.length ? 'Probá con otra búsqueda.' : 'Muy pronto vas a ver nuestras fragancias acá.'}</div>`;
+  }
+  draw();
 
   let tt;
   const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('is-on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('is-on'), 2200); };
@@ -119,13 +134,18 @@
     const id = b.parentElement.dataset.id;
     cart[id] = (cart[id] || 0) + Number(b.dataset.d);
     if (cart[id] <= 0) delete cart[id];
-    saveCart(); drawLines(); paintCount();
+    saveCart(); drawLines(); paintCount(); refreshCtl(id);
   };
   grid.onclick = e => {
-    const b = e.target.closest('.add'); if (!b) return;
-    const p = byId(b.dataset.id);
-    cart[p.id] = (cart[p.id] || 0) + 1; saveCart(); paintCount();
-    toast(`${p.name} se agregó al pedido`);
+    const b = e.target.closest('[data-d][data-id]'); if (!b || b.disabled) return;
+    const p = byId(b.dataset.id), d = Number(b.dataset.d), was = cart[p.id] || 0;
+    cart[p.id] = was + d;
+    if (cart[p.id] <= 0) delete cart[p.id];
+    saveCart(); paintCount(); refreshCtl(p.id);
+    if (!was && d > 0) toast(`${p.name} se agregó al pedido`);
+    if (was === 1 && d < 0) toast(`${p.name} se quitó del pedido`);
+    // mantiene el foco en el control para seguir sumando o restando con el teclado
+    grid.querySelector(`[data-ctl="${CSS.escape(p.id)}"] [data-d="${d}"]`)?.focus({ preventScroll: true });
   };
 
   const drawer = $('#drawer'), backdrop = $('#backdrop');
@@ -151,7 +171,7 @@
     refreshLink();
     if (!wa) { e.preventDefault(); toast('El negocio todavía no cargó su WhatsApp'); return; }
     if (!$('#cName').value.trim()) { e.preventDefault(); toast('Escribí tu nombre para enviar el pedido'); $('#cName').focus(); return; }
-    setTimeout(() => { cart = {}; saveCart(); paintCount(); close(); }, 300);
+    setTimeout(() => { cart = {}; saveCart(); paintCount(); refreshAllCtl(); close(); }, 300);
   };
 
   paintCount();

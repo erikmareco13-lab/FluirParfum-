@@ -33,6 +33,7 @@
     home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/>',
     list: '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
+    minus: '<path d="M5 12h14"/>',
     box: '<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5v-9Z"/><path d="m3 7.5 9 4.5 9-4.5M12 12v9"/>',
     more: '<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>',
     debt: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
@@ -436,21 +437,29 @@
       <div class="segmented" id="cats">${cats.map(c => `<button data-c="${esc(c)}" class="${state.saleCat === c ? 'is-active' : ''}">${esc(c)}</button>`).join('')}</div>
       ${prods.length ? `<div class="pick-grid">${prods.map(p => {
         const n = cart.get(p.id) || 0;
-        return `<button class="pick ${n ? 'is-in' : ''}" data-id="${p.id}">
-          ${n ? `<span class="pick__qty">${n}</span>` : ''}
-          <div class="pick__media">${productThumb(p, 76)}</div>
-          <div class="pick__name">${esc(p.name)}</div>
-          <div class="row-between"><span class="pick__price">${p.price ? money(p.price) : 'Sin precio'}</span><span class="pick__stock">${p.stock <= 0 ? '<span class="tag tag--debt">Agotado</span>' : `Stock ${p.stock}`}</span></div>
-        </button>`;
+        return `<div class="pick ${n ? 'is-in' : ''}">
+          <button type="button" class="pick__hit" data-id="${p.id}" data-d="1" aria-label="Agregar ${esc(p.name)}">
+            <div class="pick__media">${productThumb(p, 76)}</div>
+            <div class="pick__name">${esc(p.name)}</div>
+          </button>
+          <div class="pick__foot">
+            <div><span class="pick__price">${p.price ? money(p.price) : 'Sin precio'}</span><span class="pick__stock">${p.stock <= 0 ? '<span class="tag tag--debt">Agotado</span>' : `Stock ${p.stock}`}</span></div>
+            ${n ? `<div class="stepper" role="group" aria-label="Cantidad de ${esc(p.name)}"><button type="button" data-id="${p.id}" data-d="-1" aria-label="Quitar uno">${icon('minus', 18, 2.4)}</button><span>${n}</span><button type="button" data-id="${p.id}" data-d="1" aria-label="Agregar uno">${icon('plus', 18, 2.4)}</button></div>`
+                : `<button type="button" class="add" data-id="${p.id}" data-d="1" aria-label="Agregar ${esc(p.name)}">${icon('plus', 18, 2.4)}</button>`}
+          </div>
+        </div>`;
       }).join('')}</div>` : `<div class="list"><div class="empty"><b>No hay productos</b>Cargalos en Inventario o usá “Venta libre”.</div></div>`}
       ${units ? `<div class="cartbar"><div><small>${units} ${units === 1 ? 'producto' : 'productos'}</small><b>${money(total)}</b></div><div class="btn-row"><button class="btn btn--sm btn--clear" id="clear">Vaciar</button><button class="btn" id="next">Continuar</button></div></div><div style="height:90px"></div>` : ''}`;
     const qi = $('#q');
     qi.addEventListener('input', debounce(() => { state.saleSearch = qi.value; views.venta(); const n = $('#q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 200));
     $('#cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { state.saleCat = b.dataset.c; views.venta(); } };
-    $$('.pick').forEach(b => b.onclick = async () => {
-      const p = S.product(b.dataset.id); const n = (cart.get(p.id) || 0) + 1;
-      if (n > p.stock && !(await confirmAsk(`Solo hay ${p.stock} en stock de “${p.name}”. ¿Querés venderlo igual?`, 'Vender igual', false))) return;
-      cart.set(p.id, n); const y = scrollY; views.venta(); scrollTo(0, y);
+    $('.pick-grid')?.addEventListener('click', async e => {
+      const b = e.target.closest('[data-d][data-id]'); if (!b) return;
+      const p = S.product(b.dataset.id), d = Number(b.dataset.d), n = (cart.get(p.id) || 0) + d;
+      if (d > 0 && n > p.stock && !(await confirmAsk(`Solo hay ${p.stock} en stock de “${p.name}”. ¿Querés venderlo igual?`, 'Vender igual', false))) return;
+      n <= 0 ? cart.delete(p.id) : cart.set(p.id, n);
+      const y = scrollY; views.venta(); scrollTo(0, y);
+      $(`.pick-grid [data-id="${p.id}"][data-d="${d}"]`)?.focus({ preventScroll: true });
     });
     $('#clear')?.addEventListener('click', () => { cart.clear(); views.venta(); });
     $('#next')?.addEventListener('click', () => checkoutSheet());
